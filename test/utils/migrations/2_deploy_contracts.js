@@ -23,7 +23,7 @@ function getContractWithProvider (metadata, provider) {
 }
 
 const LifTokenTest = getContractWithProvider(require('@windingtree/lif-token/build/contracts/LifTokenTest'), provider);
-const WTIndex = getContractWithProvider(require('@windingtree/wt-contracts/build/contracts/WTIndex'), provider);
+const WTIndex = getContractWithProvider(require('@afklblockchain/wt-contracts/build/contracts/WTIndex'), provider);
 
 module.exports = function (deployer, network, accounts) {
   if (network === 'development') {

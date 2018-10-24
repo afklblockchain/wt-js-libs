@@ -8,7 +8,7 @@
     "ratePlansUri": "in-memory://rateplanstwo"
   },
   "descriptionone": {
-    "name": "First hotel",
+    "name": "First airline",
     "description": "first description",
     "location": {
       "latitude": 14.422378,
@@ -16,7 +16,7 @@
     }
   },
   "descriptiontwo": {
-    "name": "Second hotel",
+    "name": "Second airline",
     "description": "second description",
     "location": {
       "latitude": 14.422387,

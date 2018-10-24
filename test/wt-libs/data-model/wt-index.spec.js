@@ -202,10 +202,10 @@ describe('WTLibs.data-models.WTIndexDataProvider', () => {
           '0x96eA4BbF71FEa3c9411C1Cefc555E9d7189695fA', // This is not an address of a airline
         ]),
       });
-      const airlines = await indexDataProvider.getAllAirline();
-      // Attempting to get two airlines for two valid addresses
+      const airlines = await indexDataProvider.getAllAirlines();
+      // Attempting to get two hotels for two valid addresses
       assert.equal(getAirlineSpy.callCount, 2);
-      // But we know there's only one actual airlines
+      // But we know there's only one actual hotel
       assert.equal(airlines.length, 1);
       indexDataProvider.deployedIndex.methods.getAirlines.restore();
       getAirlineSpy.restore();
