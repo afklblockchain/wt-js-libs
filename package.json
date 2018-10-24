@@ -36,6 +36,7 @@
     "child_process": false
   },
   "dependencies": {
+    "@afklblockchain/wt-contracts": "^0.2.4",
     "@babel/runtime": "^7.0.0",
     "@windingtree/lif-token": "^0.1.2-erc827",
     "@windingtree/wt-contracts": "^0.2.4",

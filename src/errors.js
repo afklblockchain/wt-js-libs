@@ -129,16 +129,6 @@ export class RemoteDataAccessError extends RemotelyBackedDatasetError {}
 export class RemoteDataReadError extends RemotelyBackedDatasetError {}
 
 /**
- * Hotel is not found in WTIndex for some reason.
- */
-export class HotelNotFoundError extends WTLibsError {}
-
-/**
- * Hotel abstraction instance cannot be created for some reason.
- */
-export class HotelNotInstantiableError extends WTLibsError {}
-
-/**
  * Airline is not found in WTIndex for some reason.
  */
 export class AirlineNotFoundError extends WTLibsError {}

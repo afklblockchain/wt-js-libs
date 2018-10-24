@@ -39,13 +39,13 @@ describe('WTLibs.Contracts', () => {
     }
   });
 
-  it('should get hotel instance', async () => {
+  it('should get airline instance', async () => {
     await contracts.getIndexInstance('0x0C4c734F0Ecb92270D1ebE7b04aEC4440EB05CAa');
     assert.equal(ContractStub.calledWithNew(), true);
   });
 
   it('should get index instance', async () => {
-    await contracts.getHotelInstance('0x8C2373842D5EA4Ce4Baf53f4175e5e42a364c59C');
+    await contracts.getAirlineInstance('0x8C2373842D5EA4Ce4Baf53f4175e5e42a364c59C');
     assert.equal(ContractStub.calledWithNew(), true);
   });
 
@@ -68,10 +68,10 @@ describe('WTLibs.Contracts', () => {
       type: 'mined',
       id: 'log_c1dc1e3f' }]);
     assert.equal(decodedLogs.length, 1);
-    assert.equal(decodedLogs[0].event, 'HotelRegistered');
+    assert.equal(decodedLogs[0].event, 'AirlineRegistered');
     assert.equal(decodedLogs[0].address, '0x8C2373842D5EA4Ce4Baf53f4175e5e42a364c59C');
     assert.equal(decodedLogs[0].attributes.length, 3);
-    assert.equal(decodedLogs[0].attributes[0].name, 'hotel');
+    assert.equal(decodedLogs[0].attributes[0].name, 'airline');
     assert.equal(decodedLogs[0].attributes[1].name, 'managerIndex');
     assert.equal(decodedLogs[0].attributes[2].name, 'allIndex');
     assert.equal(decodedLogs[0].attributes[0].type, 'address');

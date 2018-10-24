@@ -9,7 +9,7 @@ import { InputDataError, SmartContractInstantiationError } from '../errors';
 
 /**
  * Wrapper class for a airline backed by a smart contract on
- * Ethereum that's holding its NDC `endpoint` .
+ * Ethereum that's holding `dataUri` pointer to its data.
  *
  * It provides an accessor to such data in a form of
  * `StoragePointer` instance under `dataIndex` property.
@@ -21,9 +21,8 @@ class OnChainAirline implements AirlineInterface {
   address: Promise<?string> | ?string;
 
   // provided by eth backed dataset
-  _endpoint: Promise<?string> | ?string;
+  _dataUri: Promise<?string> | ?string;
   _manager: Promise<?string> | ?string;
-  _token: Promise<?string> | ?string;
 
   web3Utils: Utils;
   web3Contracts: Contracts;
@@ -68,9 +67,9 @@ class OnChainAirline implements AirlineInterface {
     this.onChainDataset = RemotelyBackedDataset.createInstance();
     this.onChainDataset.bindProperties({
       fields: {
-        _endpoint: {
+        _dataUri: {
           remoteGetter: async (): Promise<?string> => {
-            return (await this._getContractInstance()).methods.endpoint().call();
+            return (await this._getContractInstance()).methods.dataUri().call();
           },
           remoteSetter: this._editInfoOnChain.bind(this),
         },
@@ -78,12 +77,6 @@ class OnChainAirline implements AirlineInterface {
           remoteGetter: async (): Promise<?string> => {
             return (await this._getContractInstance()).methods.manager().call();
           },
-        },
-        _token: {
-          remoteGetter: async (): Promise<?string> => {
-            return (await this._getContractInstance()).methods.token().call();
-          },
-          remoteSetter: this._editInfoOnChain.bind(this),
         },
       },
     }, this);
@@ -93,29 +86,54 @@ class OnChainAirline implements AirlineInterface {
     }
   }
 
-  get endpoint (): Promise<?string> | ?string {
+  /**
+   * Async getter for `StoragePointer` instance.
+   * Since it has to eventually access the `dataUri`
+   * field stored on-chain, it is lazy loaded.
+   *
+   * Data format of off-chain airline data can be found on
+   * https://github.com/windingtree/wiki/blob/master/hotel-data-swagger.yaml
+   *
+   */
+  get dataIndex (): Promise<StoragePointer> {
+    return (async () => {
+      if (!this._dataIndex) {
+        this._dataIndex = StoragePointer.createInstance(await this.dataUri, {
+          descriptionUri: { required: true },
+          ratePlansUri: { required: false },
+          availabilityUri: { required: false },
+        });
+      }
+      return this._dataIndex;
+    })();
+  }
+
+  get dataUri (): Promise<?string> | ?string {
     if (!this._initialized) {
       return;
     }
     return (async () => {
-      const endpoint = await this._endpoint;
-      return endpoint;
+      const dataUri = await this._dataUri;
+      return dataUri;
     })();
   }
 
-  set endpoint (newEndpoint: Promise<?string> | ?string) {
-    if (!newEndpoint) {
+  set dataUri (newDataUri: Promise<?string> | ?string) {
+    if (!newDataUri) {
       throw new InputDataError(
-        'Cannot update airline: Cannot set endpoint when it is not provided'
+        'Cannot update airline: Cannot set dataUri when it is not provided'
       );
     }
-    if (typeof newEndpoint === 'string') {
+    if (typeof newDataUri === 'string' && !newDataUri.match(/([a-z-]+):\/\//)) {
       throw new InputDataError(
-        'Cannot update airline: Cannot set endpoint with invalid type, must be string'
+        'Cannot update airline: Cannot set dataUri with invalid format'
       );
+    }
+    if (newDataUri !== this._dataUri) {
+      this._dataIndex = null;
     }
 
-    this._endpoint = newEndpoint;
+    this._dataUri = newDataUri;
   }
 
   get manager (): Promise<?string> | ?string {
@@ -138,27 +156,6 @@ class OnChainAirline implements AirlineInterface {
     this._manager = newManager;
   }
 
-  get token (): Promise<?string> | ?string {
-    if (!this._initialized) {
-      return;
-    }
-    return (async () => {
-      const token = await this._token;
-      return token;
-    })();
-  }
-
-  set token (newToken: Promise<?string> | ?string) {
-    if (!newToken) {
-      throw new InputDataError('Cannot update airline: Cannot set token to null');
-    }
-    if (typeof newToken === 'string') {
-      throw new InputDataError(
-        'Cannot update airline: Cannot set airline endpoint with invalid type, must be string'
-      );
-    this._token = newToken;
-  }
-
   /**
    * Update manager and dataUri properties. dataUri can never be nulled. Manager
    * can never be nulled. Manager can be changed only for an un-deployed
@@ -166,18 +163,50 @@ class OnChainAirline implements AirlineInterface {
    * @param {AirlineOnChainDataInterface} newData
    */
   async setLocalData (newData: AirlineOnChainDataInterface): Promise<void> {
-    const newEndpoint = await newData.endpoint;
-    if (newEndpoint) {
-      this.endpoint = newEndpoint;
-    }
     const newManager = await newData.manager;
     if (newManager) {
       this.manager = newManager;
     }
-    const newToken = await newData.token;
-    if (newToken) {
-      this.dataUri = newToken;
+    const newDataUri = await newData.dataUri;
+    if (newDataUri) {
+      this.dataUri = newDataUri;
     }
+  }
+
+  /**
+   * Helper method that transforms the whole airline into a sync simple
+   * JavaScript object only with data properties.
+   *
+   * By default, all off-chain data is resolved recursively. If you want to
+   * limit off-chain data only to a certain subtree, use the resolvedFields
+   * parameter that accepts an array of paths in dot notation (`father.son.child`).
+   * Every last piece of every path will be resolved recursively as well. An empty
+   * list means no fields will be resolved.
+   *
+   * Properties that represent an actual separate document have a format of
+   * ```
+   * {
+   *   'ref': 'schema://original-url',
+   *   'contents': {
+   *     'actual': 'data'
+   *   }
+   * }
+   * ```
+   *
+   * @param {resolvedFields} List of fields to be resolved from off chain data, in dot notation.
+   * If an empty array is provided, no resolving is done. If the argument is missing, all fields are resolved.
+   *
+   * @throws {StoragePointerError} when an adapter encounters an error while accessing the data
+   */
+  async toPlainObject (resolvedFields: ?Array<string>): Promise<PlainAirlineInterface> {
+    const dataIndex = await this.dataIndex;
+    const offChainData = await dataIndex.toPlainObject(resolvedFields);
+    let result = {
+      manager: await this.manager,
+      address: this.address,
+      dataUri: offChainData,
+    };
+    return result;
   }
 
   async _getContractInstance (): Promise<Object> {
@@ -196,10 +225,10 @@ class OnChainAirline implements AirlineInterface {
    * Transaction is not signed nor sent here.
    *
    * @param {TransactionOptionsInterface} options object, only `from` property is currently used, all others are ignored in this implementation
-   * @return {Promise<PreparedAirlineTransactionMetadataInterface>} resulting transaction metadata
+   * @return {Promise<PreparedTransactionMetadataInterface>} resulting transaction metadata
    */
-  async _editEndpointOnChain (transactionOptions: TransactionOptionsInterface): Promise<PreparedAirlineTransactionMetadataInterface> {
-    const data = (await this._getContractInstance()).methods.editInfo(await this.endpoint).encodeABI();
+  async _editInfoOnChain (transactionOptions: TransactionOptionsInterface): Promise<PreparedTransactionMetadataInterface> {
+    const data = (await this._getContractInstance()).methods.editInfo(await this.dataUri).encodeABI();
     const estimate = this.indexContract.methods.callAirline(this.address, data).estimateGas(transactionOptions);
     const txData = this.indexContract.methods.callAirline(this.address, data).encodeABI();
     const transactionData = {
@@ -220,13 +249,13 @@ class OnChainAirline implements AirlineInterface {
    * Transaction is not signed nor sent here.
    *
    * @param {TransactionOptionsInterface} options object, only `from` property is currently used, all others are ignored in this implementation
-   * @return {Promise<PreparedAirlineTransactionMetadataInterface>} Transaction data and metadata, including the freshly created airline instance.
+   * @return {Promise<PreparedTransactionMetadataInterface>} Transaction data and metadata, including the freshly created airline instance.
    */
-  async createOnChainData (transactionOptions: TransactionOptionsInterface): Promise<PreparedAirlineTransactionMetadataInterface> {
+  async createOnChainData (transactionOptions: TransactionOptionsInterface): Promise<PreparedTransactionMetadataInterface> {
     // Create airline on-network
-    const endpoint = await this.endpoint;
-    const estimate = this.indexContract.methods.registerAirline(endpoint).estimateGas(transactionOptions);
-    const data = this.indexContract.methods.registerAirline(endpoint).encodeABI();
+    const dataUri = await this.dataUri;
+    const estimate = this.indexContract.methods.registerAirline(dataUri).estimateGas(transactionOptions);
+    const data = this.indexContract.methods.registerAirline(dataUri).encodeABI();
     const transactionData = {
       nonce: await this.web3Utils.determineCurrentAddressNonce(transactionOptions.from),
       data: data,
@@ -257,7 +286,7 @@ class OnChainAirline implements AirlineInterface {
    * @param {TransactionOptionsInterface} options object that is passed to all remote data setters
    * @throws {SmartContractInstantiationError} When the underlying contract is not yet deployed.
    * @throws {SmartContractInstantiationError} When dataUri is empty.
-   * @return {Promise<Array<PreparedAirlineTransactionMetadataInterface>>} List of transaction metadata
+   * @return {Promise<Array<PreparedTransactionMetadataInterface>>} List of transaction metadata
    */
   async updateOnChainData (transactionOptions: TransactionOptionsInterface): Promise<Array<PreparedTransactionMetadataInterface>> {
     // pre-check if contract is available at all and fail fast
@@ -277,10 +306,10 @@ class OnChainAirline implements AirlineInterface {
    * @param {string} Address of a new manager
    * @param {TransactionOptionsInterface} options object, only `from` property is currently used, all others are ignored in this implementation
    * @throws {SmartContractInstantiationError} When the underlying contract is not yet deployed.
-   * @return {Promise<PreparedAirlineTransactionMetadataInterface>} Transaction data and metadata, including the freshly created airline instance.
+   * @return {Promise<PreparedTransactionMetadataInterface>} Transaction data and metadata, including the freshly created airline instance.
    *
    */
-  async transferOnChainOwnership (newManager: string, transactionOptions: TransactionOptionsInterface): Promise<PreparedAirlineTransactionMetadataInterface> {
+  async transferOnChainOwnership (newManager: string, transactionOptions: TransactionOptionsInterface): Promise<PreparedTransactionMetadataInterface> {
     if (!this.onChainDataset.isDeployed()) {
       throw new SmartContractInstantiationError('Cannot remove airline: not deployed');
     }
@@ -312,7 +341,7 @@ class OnChainAirline implements AirlineInterface {
    * @throws {SmartContractInstantiationError} When the underlying contract is not yet deployed.
    * @return {Promise<PreparedTransactionMetadataInterface>} Transaction data and metadata, including the freshly created airline instance.
    */
-  async removeOnChainData (transactionOptions: TransactionOptionsInterface): Promise<PreparedAirlineTransactionMetadataInterface> {
+  async removeOnChainData (transactionOptions: TransactionOptionsInterface): Promise<PreparedTransactionMetadataInterface> {
     if (!this.onChainDataset.isDeployed()) {
       throw new SmartContractInstantiationError('Cannot remove airline: not deployed');
     }

@@ -9,7 +9,7 @@ import { InputDataError, WTLibsError } from '../src/errors';
 
 describe('WTLibs usage', () => {
   let libs, wallet, index, emptyIndex, minedTxHashes = [],
-    hotelManager = '0xD39Ca7d186a37bb6Bf48AE8abFeB4c687dc8F906';
+    airlineManager = '0xD39Ca7d186a37bb6Bf48AE8abFeB4c687dc8F906';
 
   beforeEach(() => {
     libs = WTLibs.createInstance(testedDataModel.withDataSource());
@@ -24,12 +24,12 @@ describe('WTLibs usage', () => {
     OffChainDataClient._reset();
   });
 
-  describe('addHotel', () => {
-    it('should add hotel', async () => {
+  describe('addAirline', () => {
+    it('should add airline', async () => {
       const jsonClient = libs.getOffChainDataClient('in-memory');
       const descUrl = await jsonClient.upload({
-        name: 'Premium hotel',
-        description: 'Great hotel',
+        name: 'Premium airline',
+        description: 'Great airline',
         location: {
           latitude: 'lat',
           longitude: 'long',
@@ -38,124 +38,124 @@ describe('WTLibs usage', () => {
       const dataUri = await jsonClient.upload({
         descriptionUri: descUrl,
       });
-      const createHotel = await index.addHotel({
-        manager: hotelManager,
+      const createAirline = await index.addAirline({
+        manager: airlineManager,
         dataUri: dataUri,
       });
-      const hotel = createHotel.hotel;
-      const result = await wallet.signAndSendTransaction(createHotel.transactionData, createHotel.eventCallbacks);
+      const airline = createAirline.airline;
+      const result = await wallet.signAndSendTransaction(createAirline.transactionData, createAirline.eventCallbacks);
 
       assert.isDefined(result);
-      assert.isDefined(hotel.address);
+      assert.isDefined(airline.address);
       assert.isDefined(result.transactionHash);
 
       // Prepare getTransactionsStatus test
       minedTxHashes.push(result.transactionHash);
       // Don't bother with checksummed address format
-      assert.equal((await hotel.manager), hotelManager);
-      assert.equal((await hotel.dataUri).toLowerCase(), dataUri);
-      const dataIndex = await hotel.dataIndex;
+      assert.equal((await airline.manager), airlineManager);
+      assert.equal((await airline.dataUri).toLowerCase(), dataUri);
+      const dataIndex = await airline.dataIndex;
       const description = (await dataIndex.contents).descriptionUri;
-      assert.equal((await description.contents).name, 'Premium hotel');
+      assert.equal((await description.contents).name, 'Premium airline');
 
-      // We're removing the hotel to ensure clean slate after this test is run.
+      // We're removing the airline to ensure clean slate after this test is run.
       // It is too possibly expensive to re-set on-chain WTIndex after each test.
-      const removeHotel = await index.removeHotel(hotel);
-      const removalResult = await wallet.signAndSendTransaction(removeHotel.transactionData, removeHotel.eventCallbacks);
+      const removeAirline = await index.removeAirline(airline);
+      const removalResult = await wallet.signAndSendTransaction(removeAirline.transactionData, removeAirline.eventCallbacks);
       const removalTxResults = await libs.getTransactionsStatus([removalResult.transactionHash]);
       assert.equal(removalTxResults.meta.allPassed, true);
     });
 
-    it('should throw when hotel does not have a manager', async () => {
+    it('should throw when airline does not have a manager', async () => {
       try {
-        await index.addHotel({
+        await index.addAirline({
           dataUri: 'in-memory://some-data-hash',
         });
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot add hotel/i);
+        assert.match(e.message, /cannot add airline/i);
         assert.instanceOf(e, InputDataError);
       }
     });
 
-    it('should throw when hotel does not have a dataUri', async () => {
+    it('should throw when airline does not have a dataUri', async () => {
       try {
-        await index.addHotel({
-          manager: hotelManager,
+        await index.addAirline({
+          manager: airlineManager,
         });
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot add hotel/i);
+        assert.match(e.message, /cannot add airline/i);
         assert.instanceOf(e, InputDataError);
       }
     });
   });
 
-  describe('removeHotel', () => {
-    it('should remove hotel', async () => {
-      const manager = hotelManager;
-      const createHotel = await index.addHotel({
+  describe('removeAirline', () => {
+    it('should remove airline', async () => {
+      const manager = airlineManager;
+      const createAirline = await index.addAirline({
         dataUri: 'in-memory://some-data-hash',
         manager: manager,
       });
-      const origHotel = createHotel.hotel;
-      await wallet.signAndSendTransaction(createHotel.transactionData, createHotel.eventCallbacks);
-      assert.isDefined(origHotel.address);
+      const origAirline = createAirline.airline;
+      await wallet.signAndSendTransaction(createAirline.transactionData, createAirline.eventCallbacks);
+      assert.isDefined(origAirline.address);
 
       // Verify that it has been added
-      let list = (await index.getAllHotels());
+      let list = (await index.getAllAirlines());
       assert.equal(list.length, 3);
-      assert.include(await Promise.all(list.map(async (a) => a.address)), origHotel.address);
-      const hotel = await index.getHotel(origHotel.address);
+      assert.include(await Promise.all(list.map(async (a) => a.address)), origAirline.address);
+      const airline = await index.getAirline(origAirline.address);
       // Remove
-      const removeHotel = await index.removeHotel(hotel);
-      const removalResult = await wallet.signAndSendTransaction(removeHotel.transactionData, removeHotel.eventCallbacks);
+      const removeAirline = await index.removeAirline(airline);
+      const removalResult = await wallet.signAndSendTransaction(removeAirline.transactionData, removeAirline.eventCallbacks);
       assert.isDefined(removalResult);
       // prepare getTransactionsStatus test
       minedTxHashes.push(removalResult.transactionHash);
       // Verify that it has been removed
-      list = await index.getAllHotels();
+      list = await index.getAllAirlines();
       assert.equal(list.length, 2);
-      assert.notInclude(list.map(async (a) => a.address), await hotel.address);
+      assert.notInclude(list.map(async (a) => a.address), await airline.address);
     });
 
-    it('should throw if hotel has no address', async () => {
+    it('should throw if airline has no address', async () => {
       try {
-        const hotel = await index.getHotel('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
-        hotel.address = undefined;
-        await index.removeHotel(hotel);
+        const airline = await index.getAirline('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
+        airline.address = undefined;
+        await index.removeAirline(airline);
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot remove hotel/i);
+        assert.match(e.message, /cannot remove airline/i);
         assert.match(e.message, /without address/i);
         assert.instanceOf(e, InputDataError);
       }
     });
   });
 
-  describe('getHotel', () => {
-    it('should get hotel', async () => {
+  describe('getAirline', () => {
+    it('should get airline', async () => {
       const address = '0xbf18b616ac81830dd0c5d4b771f22fd8144fe769';
-      const hotel = await index.getHotel(address);
-      assert.isNotNull(hotel);
-      assert.equal(await hotel.dataUri, 'in-memory://urlone');
-      assert.equal(await hotel.address, address);
+      const airline = await index.getAirline(address);
+      assert.isNotNull(airline);
+      assert.equal(await airline.dataUri, 'in-memory://urlone');
+      assert.equal(await airline.address, address);
     });
 
     it('should provide an initialized dataIndex', async () => {
       const address = '0xbf18b616ac81830dd0c5d4b771f22fd8144fe769';
-      const hotel = await index.getHotel(address);
-      assert.isNotNull(hotel);
-      const hotelDataIndex = await hotel.dataIndex;
-      assert.equal(hotelDataIndex.ref, await hotel.dataUri);
-      assert.isDefined(hotelDataIndex.contents);
-      const hotelDataContents = (await hotelDataIndex.contents);
-      const descriptionContents = hotelDataContents.descriptionUri;
+      const airline = await index.getAirline(address);
+      assert.isNotNull(airline);
+      const airlineDataIndex = await airline.dataIndex;
+      assert.equal(airlineDataIndex.ref, await airline.dataUri);
+      assert.isDefined(airlineDataIndex.contents);
+      const airlineDataContents = (await airlineDataIndex.contents);
+      const descriptionContents = airlineDataContents.descriptionUri;
       assert.isDefined(descriptionContents.contents);
       assert.isDefined(descriptionContents.ref);
-      assert.equal((await descriptionContents.contents).name, 'First hotel');
+      assert.equal((await descriptionContents.contents).name, 'First airline');
       assert.equal(descriptionContents.ref, 'in-memory://descriptionone');
-      const ratePlanContents = hotelDataContents.ratePlansUri;
+      const ratePlanContents = airlineDataContents.ratePlansUri;
       assert.isDefined(ratePlanContents.contents);
       assert.isDefined(ratePlanContents.ref);
       assert.equal((await ratePlanContents.contents)['rate-plan'].name, 'Basic');
@@ -163,156 +163,156 @@ describe('WTLibs usage', () => {
     });
 
     it('should provide a toPlainObject method', async () => {
-      const hotel = await index.getHotel('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
-      assert.isNotNull(hotel);
-      assert.isDefined(hotel.toPlainObject);
-      const plainHotel = await hotel.toPlainObject();
-      assert.isUndefined(plainHotel.toPlainObject);
-      assert.equal(plainHotel.address, await hotel.address);
-      assert.equal(plainHotel.manager, await hotel.manager);
-      assert.isDefined(plainHotel.dataUri.contents.descriptionUri);
-      assert.isDefined(plainHotel.dataUri.contents.descriptionUri.contents);
-      assert.isDefined(plainHotel.dataUri.contents.descriptionUri.contents.location);
-      assert.equal(plainHotel.dataUri.contents.descriptionUri.contents.name, 'First hotel');
-      assert.isDefined(plainHotel.dataUri.contents.ratePlansUri);
-      assert.isDefined(plainHotel.dataUri.contents.ratePlansUri.contents);
-      assert.equal(plainHotel.dataUri.contents.ratePlansUri.contents['rate-plan-2'].name, 'More expensive');
+      const airline = await index.getAirline('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
+      assert.isNotNull(airline);
+      assert.isDefined(airline.toPlainObject);
+      const plainAirline = await airline.toPlainObject();
+      assert.isUndefined(plainAirline.toPlainObject);
+      assert.equal(plainAirline.address, await airline.address);
+      assert.equal(plainAirline.manager, await airline.manager);
+      assert.isDefined(plainAirline.dataUri.contents.descriptionUri);
+      assert.isDefined(plainAirline.dataUri.contents.descriptionUri.contents);
+      assert.isDefined(plainAirline.dataUri.contents.descriptionUri.contents.location);
+      assert.equal(plainAirline.dataUri.contents.descriptionUri.contents.name, 'First airline');
+      assert.isDefined(plainAirline.dataUri.contents.ratePlansUri);
+      assert.isDefined(plainAirline.dataUri.contents.ratePlansUri.contents);
+      assert.equal(plainAirline.dataUri.contents.ratePlansUri.contents['rate-plan-2'].name, 'More expensive');
     });
 
-    it('should throw if no hotel is found on given address', async () => {
+    it('should throw if no airline is found on given address', async () => {
       try {
-        await index.getHotel('0x96eA4BbF71FEa3c9411C1Cefc555E9d7189695fA');
+        await index.getAirline('0x96eA4BbF71FEa3c9411C1Cefc555E9d7189695fA');
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot find hotel/i);
+        assert.match(e.message, /cannot find airline/i);
         assert.instanceOf(e, WTLibsError);
       }
     });
   });
 
-  describe('updateHotel', () => {
-    const hotelAddress = '0xbf18b616ac81830dd0c5d4b771f22fd8144fe769';
+  describe('updateAirline', () => {
+    const airlineAddress = '0xbf18b616ac81830dd0c5d4b771f22fd8144fe769';
 
-    it('should update hotel', async () => {
+    it('should update airline', async () => {
       const newUri = 'in-memory://another-url';
-      const hotel = await index.getHotel(hotelAddress);
-      const oldUri = await hotel.dataUri;
-      hotel.dataUri = newUri;
+      const airline = await index.getAirline(airlineAddress);
+      const oldUri = await airline.dataUri;
+      airline.dataUri = newUri;
       // Change the data
-      const updateHotelSet = await index.updateHotel(hotel);
+      const updateAirlineSet = await index.updateAirline(airline);
       let updateResult;
-      for (let updateHotel of updateHotelSet) {
-        updateResult = await wallet.signAndSendTransaction(updateHotel.transactionData, updateHotel.eventCallbacks);
+      for (let updateAirline of updateAirlineSet) {
+        updateResult = await wallet.signAndSendTransaction(updateAirline.transactionData, updateAirline.eventCallbacks);
         assert.isDefined(updateResult);
       }
       // Verify
-      const hotel2 = await index.getHotel(hotelAddress);
-      assert.equal(await hotel2.dataUri, newUri);
+      const airline2 = await index.getAirline(airlineAddress);
+      assert.equal(await airline2.dataUri, newUri);
       // Change it back to keep data in line
-      hotel.dataUri = oldUri;
-      const updateHotelSet2 = await index.updateHotel(hotel);
-      for (let updateHotel of updateHotelSet2) {
-        updateResult = await wallet.signAndSendTransaction(updateHotel.transactionData, updateHotel.eventCallbacks);
+      airline.dataUri = oldUri;
+      const updateAirlineSet2 = await index.updateAirline(airline);
+      for (let updateAirline of updateAirlineSet2) {
+        updateResult = await wallet.signAndSendTransaction(updateAirline.transactionData, updateAirline.eventCallbacks);
         assert.isDefined(updateResult);
       }
       // Verify it changed properly
-      const hotel3 = await index.getHotel(hotelAddress);
-      assert.equal(await hotel3.dataUri, oldUri);
+      const airline3 = await index.getAirline(airlineAddress);
+      assert.equal(await airline3.dataUri, oldUri);
     });
 
-    it('should throw if hotel has no address', async () => {
+    it('should throw if airline has no address', async () => {
       try {
         const newUri = 'in-memory://another-random-hash';
-        const hotel = await index.getHotel(hotelAddress);
-        hotel.dataUri = newUri;
-        hotel.address = undefined;
-        await index.updateHotel(hotel);
+        const airline = await index.getAirline(airlineAddress);
+        airline.dataUri = newUri;
+        airline.address = undefined;
+        await index.updateAirline(airline);
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot update hotel/i);
+        assert.match(e.message, /cannot update airline/i);
         assert.match(e.message, /without address/i);
         assert.instanceOf(e, InputDataError);
       }
     });
 
-    it('should throw if hotel has no dataUri', async () => {
+    it('should throw if airline has no dataUri', async () => {
       try {
-        const hotel = await index.getHotel(hotelAddress);
-        hotel.dataUri = undefined;
-        await index.updateHotel(hotel);
+        const airline = await index.getAirline(airlineAddress);
+        airline.dataUri = undefined;
+        await index.updateAirline(airline);
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot update hotel/i);
+        assert.match(e.message, /cannot update airline/i);
         assert.match(e.message, /cannot set dataUri when it is not provided/i);
         assert.instanceOf(e, InputDataError);
       }
     });
 
-    it('should throw if hotel does not exist on network', async () => {
+    it('should throw if airline does not exist on network', async () => {
       try {
-        const hotel = {
+        const airline = {
           address: '0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826',
           dataUri: 'in-memory://another-random-hash',
         };
-        await index.updateHotel(hotel);
+        await index.updateAirline(airline);
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot update hotel/i);
+        assert.match(e.message, /cannot update airline/i);
         assert.instanceOf(e, WTLibsError);
       }
     });
   });
 
-  describe('transferHotelOwnership', () => {
-    const hotelAddress = '0xBF18B616aC81830dd0C5D4b771F22FD8144fe769',
-      newHotelOwner = '0x04e46F24307E4961157B986a0b653a0D88F9dBd6';
+  describe('transferAirlineOwnership', () => {
+    const airlineAddress = '0xBF18B616aC81830dd0C5D4b771F22FD8144fe769',
+      newAirlineOwner = '0x04e46F24307E4961157B986a0b653a0D88F9dBd6';
 
-    it('should transfer hotel', async () => {
-      const hotel = await index.getHotel(hotelAddress);
-      const hotelContract = await hotel._getContractInstance();
+    it('should transfer airline', async () => {
+      const airline = await index.getAirline(airlineAddress);
+      const airlineContract = await airline._getContractInstance();
 
-      assert.equal(await hotel.manager, hotelManager);
-      assert.equal(await hotelContract.methods.manager().call(), hotelManager);
+      assert.equal(await airline.manager, airlineManager);
+      assert.equal(await airlineContract.methods.manager().call(), airlineManager);
       
-      const updateHotel = await index.transferHotelOwnership(hotel, newHotelOwner);
-      await wallet.signAndSendTransaction(updateHotel.transactionData, updateHotel.eventCallbacks);
+      const updateAirline = await index.transferAirlineOwnership(airline, newAirlineOwner);
+      await wallet.signAndSendTransaction(updateAirline.transactionData, updateAirline.eventCallbacks);
       // Verify
-      const hotel2 = await index.getHotel(hotelAddress);
-      const hotel2Contract = await hotel2._getContractInstance();
-      assert.equal(await hotel2.manager, newHotelOwner);
-      assert.equal(await hotel2Contract.methods.manager().call(), newHotelOwner);
+      const airline2 = await index.getAirline(airlineAddress);
+      const airline2Contract = await airline2._getContractInstance();
+      assert.equal(await airline2.manager, newAirlineOwner);
+      assert.equal(await airline2Contract.methods.manager().call(), newAirlineOwner);
       
       // Change it back to keep data in line
-      const updateHotel2 = await index.transferHotelOwnership(hotel, hotelManager);
+      const updateAirline2 = await index.transferAirlineOwnership(airline, airlineManager);
       const wallet2 = libs.createWallet(jsonWallet2);
       wallet2.unlock('test123');
-      await wallet2.signAndSendTransaction(updateHotel2.transactionData, updateHotel2.eventCallbacks);
+      await wallet2.signAndSendTransaction(updateAirline2.transactionData, updateAirline2.eventCallbacks);
       // Verify
-      const hotel3 = await index.getHotel(hotelAddress);
-      const hotel3Contract = await hotel3._getContractInstance();
-      assert.equal(await hotel3.manager, hotelManager);
-      assert.equal(await hotel3Contract.methods.manager().call(), hotelManager);
+      const airline3 = await index.getAirline(airlineAddress);
+      const airline3Contract = await airline3._getContractInstance();
+      assert.equal(await airline3.manager, airlineManager);
+      assert.equal(await airline3Contract.methods.manager().call(), airlineManager);
     });
   });
 
-  describe('getAllHotels', () => {
-    it('should get all hotels', async () => {
-      const hotels = await index.getAllHotels();
-      assert.equal(hotels.length, 2);
-      for (let hotel of hotels) {
-        assert.isDefined(hotel.toPlainObject);
-        assert.isDefined((await hotel.dataIndex).ref);
-        const plainHotel = await hotel.toPlainObject();
-        assert.equal(plainHotel.address, await hotel.address);
-        assert.equal(plainHotel.manager, await hotel.manager);
-        assert.isDefined(plainHotel.dataUri.ref);
-        assert.isDefined(plainHotel.dataUri.contents);
+  describe('getAllAirliness', () => {
+    it('should get all airlines', async () => {
+      const airlines = await index.getAllAirlines();
+      assert.equal(airlines.length, 2);
+      for (let airline of airlines) {
+        assert.isDefined(airline.toPlainObject);
+        assert.isDefined((await airline.dataIndex).ref);
+        const plainAirline = await airline.toPlainObject();
+        assert.equal(plainAirline.address, await airline.address);
+        assert.equal(plainAirline.manager, await airline.manager);
+        assert.isDefined(plainAirline.dataUri.ref);
+        assert.isDefined(plainAirline.dataUri.contents);
       }
     });
 
-    it('should get empty list if no hotels are set', async () => {
-      const hotels = await emptyIndex.getAllHotels();
-      assert.equal(hotels.length, 0);
+    it('should get empty list if no airlines are set', async () => {
+      const airline = await emptyIndex.getAllAirlines();
+      assert.equal(airline.length, 0);
     });
   });
 

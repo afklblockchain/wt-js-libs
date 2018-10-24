@@ -1,22 +1,19 @@
 // @flow
 import type { 
   WTIndexInterface, 
-  HotelOnChainDataInterface, 
-  HotelInterface, 
   PreparedTransactionMetadataInterface,
   AirlineOnChainDataInterface,
   AirlineInterface,
-  PreparedAirlineTransactionMetadataInterface
  } from '../interfaces';
 import Utils from '../utils';
 import Contracts from '../contracts';
-import OnChainHotel from './on-chain-hotel';
+import OnChainAirline from './on-chain-airline';
 
-import { InputDataError, HotelNotFoundError, HotelNotInstantiableError, WTLibsError } from '../errors';
+import { InputDataError, AirlineNotFoundError, AirlineNotInstantiableError, WTLibsError } from '../errors';
 
 /**
  * Ethereum smart contract backed implementation of Winding Tree
- * index wrapper. It provides methods for working with hotel
+ * index wrapper. It provides methods for working with airline
  * contracts.
  */
 class WTIndex implements WTIndexInterface {
@@ -46,175 +43,175 @@ class WTIndex implements WTIndexInterface {
     return this.deployedIndex;
   }
 
-  async _createHotelInstance (address?: string): Promise<HotelInterface> {
-    return OnChainHotel.createInstance(this.web3Utils, this.web3Contracts, await this._getDeployedIndex(), address);
+  async _createAirlineInstance (address?: string): Promise<AirlineInterface> {
+    return OnChainAirline.createInstance(this.web3Utils, this.web3Contracts, await this._getDeployedIndex(), address);
   }
 
   /**
-   * Generates transaction data required for adding a totally new hotel
+   * Generates transaction data required for adding a totally new airline
    * and more metadata required for sucessful mining of that transaction.
    * Does not sign or send the transaction.
    *
-   * @throws {InputDataError} When hotelData does not contain dataUri property.
-   * @throws {InputDataError} When hotelData does not contain a manager property.
+   * @throws {InputDataError} When airlineData does not contain dataUri property.
+   * @throws {InputDataError} When airlineData does not contain a manager property.
    * @throws {WTLibsError} When anything goes wrong during data preparation phase.
    */
-  async addHotel (hotelData: HotelOnChainDataInterface): Promise<PreparedTransactionMetadataInterface> {
-    if (!await hotelData.dataUri) {
-      throw new InputDataError('Cannot add hotel: Missing dataUri');
+  async addAirline (airlineData: AirlineOnChainDataInterface): Promise<PreparedTransactionMetadataInterface> {
+    if (!await airlineData.dataUri) {
+      throw new InputDataError('Cannot add airline: Missing dataUri');
     }
-    const hotelManager = await hotelData.manager;
-    if (!hotelManager) {
-      throw new InputDataError('Cannot add hotel: Missing manager');
+    const airlineManager = await airlineData.manager;
+    if (!airlineManager) {
+      throw new InputDataError('Cannot add airline: Missing manager');
     }
-    const hotel: HotelInterface = await this._createHotelInstance();
-    await hotel.setLocalData(hotelData);
-    return hotel.createOnChainData({
-      from: hotelManager,
+    const airline: AirlineInterface = await this._createAirlineInstance();
+    await airline.setLocalData(airlineData);
+    return airline.createOnChainData({
+      from: airlineManager,
     }).catch((err) => {
-      throw new WTLibsError('Cannot add hotel: ' + err.message, err);
+      throw new WTLibsError('Cannot add airline: ' + err.message, err);
     });
   }
 
   /**
-   * Generates a list of transaction data required for updating a hotel
+   * Generates a list of transaction data required for updating a airline
    * and more metadata required for sucessful mining of those transactions.
    * Does not sign or send any of the transactions.
    *
-   * @throws {InputDataError} When hotel does not have a manager field.
-   * @throws {InputDataError} When hotel does not contain a manager property.
+   * @throws {InputDataError} When airline does not have a manager field.
+   * @throws {InputDataError} When airline does not contain a manager property.
    * @throws {WTLibsError} When anything goes wrong during data preparation phase.
    */
-  async updateHotel (hotel: HotelInterface): Promise<Array<PreparedTransactionMetadataInterface>> {
-    if (!hotel.address) {
-      throw new InputDataError('Cannot update hotel without address.');
+  async updateAirline (airline: AirlineInterface): Promise<Array<PreparedTransactionMetadataInterface>> {
+    if (!airline.address) {
+      throw new InputDataError('Cannot update airline without address.');
     }
-    const hotelManager = await hotel.manager;
-    if (!hotelManager) {
-      throw new InputDataError('Cannot update hotel without manager.');
+    const airlineManager = await airline.manager;
+    if (!airlineManager) {
+      throw new InputDataError('Cannot update airline without manager.');
     }
-    return hotel.updateOnChainData({
-      from: hotelManager,
+    return airline.updateOnChainData({
+      from: airlineManager,
     }).catch((err) => {
-      throw new WTLibsError('Cannot update hotel:' + err.message, err);
+      throw new WTLibsError('Cannot update airline:' + err.message, err);
     });
   }
 
   /**
-   * Generates transaction data required for removing a hotel
+   * Generates transaction data required for removing a airline
    * and more metadata required for successful mining of that transaction.
    * Does not sign or send the transaction.
    *
-   * @throws {InputDataError} When hotel does not contain dataUri property.
-   * @throws {InputDataError} When hotel does not contain a manager property.
+   * @throws {InputDataError} When airline does not contain dataUri property.
+   * @throws {InputDataError} When airline does not contain a manager property.
    * @throws {WTLibsError} When anything goes wrong during data preparation phase.
    */
-  async removeHotel (hotel: HotelInterface): Promise<PreparedTransactionMetadataInterface> {
-    if (!hotel.address) {
-      throw new InputDataError('Cannot remove hotel without address.');
+  async removeAirline (airline: AirlineInterface): Promise<PreparedTransactionMetadataInterface> {
+    if (!airline.address) {
+      throw new InputDataError('Cannot remove airline without address.');
     }
-    const hotelManager = await hotel.manager;
-    if (!hotelManager) {
-      throw new InputDataError('Cannot remove hotel without manager.');
+    const airlineManager = await airline.manager;
+    if (!airlineManager) {
+      throw new InputDataError('Cannot remove airline without manager.');
     }
-    return hotel.removeOnChainData({
-      from: hotelManager,
+    return airline.removeOnChainData({
+      from: airlineManager,
     }).catch((err) => {
-      // invalid opcode -> non-existent hotel
+      // invalid opcode -> non-existent airline
       // invalid opcode -> failed check for manager
-      throw new WTLibsError('Cannot remove hotel: ' + err.message, err);
+      throw new WTLibsError('Cannot remove airline: ' + err.message, err);
     });
   }
 
   /**
-   * Generates transaction data required for transferring a hotel
+   * Generates transaction data required for transferring a airline
    * ownership and more metadata required for successful mining of that
    * transactoin. Does not sign or send the transaction.
    *
-   * @throws {InputDataError} When hotel does not have an address.
-   * @throws {InputDataError} When hotel does not contain a manager property.
+   * @throws {InputDataError} When airline does not have an address.
+   * @throws {InputDataError} When airline does not contain a manager property.
    * @throws {InputDataError} When the new manager address is the same as the old manager.
    * @throws {InputDataError} When the new manager address is not a valid address.
    * @throws {WTLibsError} When anything goes wrong during data preparation phase.
    */
-  async transferHotelOwnership (hotel: HotelInterface, newManager: string): Promise<PreparedTransactionMetadataInterface> {
-    if (!hotel.address) {
-      throw new InputDataError('Cannot transfer hotel without address.');
+  async transferAirlineOwnership (airline: AirlineInterface, newManager: string): Promise<PreparedTransactionMetadataInterface> {
+    if (!airline.address) {
+      throw new InputDataError('Cannot transfer airline without address.');
     }
-    const hotelManager = await hotel.manager;
-    if (!hotelManager) {
-      throw new InputDataError('Cannot transfer hotel without manager.');
+    const airlineManager = await airline.manager;
+    if (!airlineManager) {
+      throw new InputDataError('Cannot transfer airline without manager.');
     }
 
-    if (hotelManager.toLowerCase() === newManager.toLowerCase()) {
-      throw new InputDataError('Cannot transfer hotel to the same manager.');
+    if (airlineManager.toLowerCase() === newManager.toLowerCase()) {
+      throw new InputDataError('Cannot transfer airline to the same manager.');
     }
 
     if (this.web3Utils.isZeroAddress(newManager)) {
-      throw new InputDataError('Cannot transfer hotel to an invalid newManager address.');
+      throw new InputDataError('Cannot transfer airline to an invalid newManager address.');
     }
 
-    return hotel.transferOnChainOwnership(newManager, {
-      from: hotelManager,
+    return airline.transferOnChainOwnership(newManager, {
+      from: airlineManager,
     }).catch((err) => {
-      // invalid opcode -> non-existent hotel
+      // invalid opcode -> non-existent airline
       // invalid opcode -> failed check for manager
-      throw new WTLibsError('Cannot transfer hotel: ' + err.message, err);
+      throw new WTLibsError('Cannot transfer airline: ' + err.message, err);
     });
   }
 
   /**
-   * Gets hotel representation of a hotel on a given address. If hotel
+   * Gets airline representation of a airline on a given address. If airline
    * on such address is not registered through this Winding Tree index
    * instance, the method throws immediately.
    *
-   * @throws {HotelNotFoundError} When hotel does not exist.
-   * @throws {HotelNotInstantiableError} When the hotel class cannot be constructed.
+   * @throws {AirlineNotFoundError} When airline does not exist.
+   * @throws {AirlineNotInstantiableError} When the airline class cannot be constructed.
    * @throws {WTLibsError} When something breaks in the network communication.
    */
-  async getHotel (address: string): Promise<?HotelInterface> {
+  async getAirline (address: string): Promise<?AirlineInterface> {
     const index = await this._getDeployedIndex();
-    let hotelIndex;
+    let airlineIndex;
     try {
       // This returns strings
-      hotelIndex = parseInt(await index.methods.hotelsIndex(address).call(), 10);
+      airlineIndex = parseInt(await index.methods.airlinesIndex(address).call(), 10);
     } catch (err) {
-      throw new WTLibsError('Cannot find hotel at ' + address + ': ' + err.message, err);
+      throw new WTLibsError('Cannot find airline at ' + address + ': ' + err.message, err);
     }
     // Zeroeth position is reserved as empty during index deployment
-    if (!hotelIndex) {
-      throw new HotelNotFoundError(`Cannot find hotel at ${address}: Not found in hotel list`);
+    if (!airlineIndex) {
+      throw new AirlineNotFoundError(`Cannot find airline at ${address}: Not found in airline list`);
     } else {
-      return this._createHotelInstance(address).catch((err) => {
-        throw new HotelNotInstantiableError('Cannot find hotel at ' + address + ': ' + err.message, err);
+      return this._createAirlineInstance(address).catch((err) => {
+        throw new AirlineNotInstantiableError('Cannot find airline at ' + address + ': ' + err.message, err);
       });
     }
   }
 
   /**
-   * Returns a list of all hotels. It will filter out
-   * every hotel that is inaccessible for any reason.
+   * Returns a list of all airlines. It will filter out
+   * every airline that is inaccessible for any reason.
    *
-   * Currently any inaccessible hotel is silently ignored.
+   * Currently any inaccessible airline is silently ignored.
    * Subject to change.
    */
-  async getAllHotels (): Promise<Array<HotelInterface>> {
+  async getAllAirlines(): Promise<Array<AirlineInterface>> {
     const index = await this._getDeployedIndex();
-    const hotelsAddressList = await index.methods.getHotels().call();
-    let getHotelDetails = hotelsAddressList
+    const airlinesAddressList = await index.methods.getAirlines().call();
+    let getAirlineDetails = airlinesAddressList
       // Filtering null addresses beforehand improves efficiency
       .filter((addr: string): boolean => !this.web3Utils.isZeroAddress(addr))
-      .map((addr: string): Promise<?HotelInterface> => {
-        return this.getHotel(addr) // eslint-disable-line promise/no-nesting
-          // We don't really care why the hotel is inaccessible
-          // and we need to catch exceptions here on each individual hotel
+      .map((addr: string): Promise<?AirlineInterface> => {
+        return this.getAirline(addr) // eslint-disable-line promise/no-nesting
+          // We don't really care why the airline is inaccessible
+          // and we need to catch exceptions here on each individual airline
           .catch((err: Error): null => { // eslint-disable-line
             return null;
           });
       });
-    const hotelDetails: Array<?HotelInterface> = await (Promise.all(getHotelDetails): any); // eslint-disable-line flowtype/no-weak-types
-    const hotelList: Array<HotelInterface> = (hotelDetails.filter((a: ?HotelInterface): boolean => a != null): any); // eslint-disable-line flowtype/no-weak-types
-    return hotelList;
+    const airlineDetails: Array<?AirlineInterface> = await (Promise.all(getAirlineDetails): any); // eslint-disable-line flowtype/no-weak-types
+    const airlineList: Array<AirlineInterface> = (airlineDetails.filter((a: ?AirlineInterface): boolean => a != null): any); // eslint-disable-line flowtype/no-weak-types
+    return airlineList;
   }
 }
 

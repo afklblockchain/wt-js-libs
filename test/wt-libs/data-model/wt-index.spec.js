@@ -4,7 +4,7 @@ import WTIndexDataProvider from '../../../src/data-model/wt-index';
 import Web3UriDataModel from '../../../src/data-model/';
 import testedDataModel from '../../utils/data-model-definition';
 
-import { SmartContractInstantiationError, HotelNotInstantiableError, HotelNotFoundError, WTLibsError, RemoteDataReadError, InputDataError } from '../../../src/errors';
+import { SmartContractInstantiationError, AirlineNotInstantiableError, AirlineNotFoundError, WTLibsError, RemoteDataReadError, InputDataError } from '../../../src/errors';
 
 describe('WTLibs.data-models.WTIndexDataProvider', () => {
   let dataModel, indexDataProvider;
@@ -25,87 +25,87 @@ describe('WTLibs.data-models.WTIndexDataProvider', () => {
     }
   });
 
-  describe('getHotel', () => {
+  describe('getAirline', () => {
     it('should throw if address is malformed', async () => {
       try {
-        await indexDataProvider.getHotel('random-address');
+        await indexDataProvider.getAirline('random-address');
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot find hotel/i);
+        assert.match(e.message, /cannot find airline/i);
         assert.instanceOf(e, WTLibsError);
       }
     });
 
-    it('should throw if no hotel exists on that address', async () => {
+    it('should throw if no airline exists on that address', async () => {
       try {
-        await indexDataProvider.getHotel('0x96eA4BbF71FEa3c9411C1Cefc555E9d7189695fA');
+        await indexDataProvider.getAirline('0x96eA4BbF71FEa3c9411C1Cefc555E9d7189695fA');
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot find hotel/i);
-        assert.instanceOf(e, HotelNotFoundError);
+        assert.match(e.message, /cannot find airline/i);
+        assert.instanceOf(e, AirlineNotFoundError);
       }
     });
 
-    it('should throw if hotel contract cannot be instantiated', async () => {
+    it('should throw if airline contract cannot be instantiated', async () => {
       try {
-        sinon.stub(indexDataProvider, '_createHotelInstance').rejects();
-        await indexDataProvider.getHotel('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
+        sinon.stub(indexDataProvider, '_createAirlineInstance').rejects();
+        await indexDataProvider.getAirline('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot find hotel/i);
-        assert.instanceOf(e, HotelNotInstantiableError);
+        assert.match(e.message, /cannot find airline/i);
+        assert.instanceOf(e, AirlineNotInstantiableError);
       } finally {
-        indexDataProvider._createHotelInstance.restore();
+        indexDataProvider._createAirlineInstance.restore();
       }
     });
 
     it('should throw if accessing off-chain data without resolved on-chain pointer and on-chain pointer cannot be downloaded', async () => {
       // pre-heat the contract so we can stub it later
       await indexDataProvider._getDeployedIndex();
-      sinon.stub(indexDataProvider.deployedIndex.methods, 'hotelsIndex').returns({
+      sinon.stub(indexDataProvider.deployedIndex.methods, 'airlinesIndex').returns({
         call: sinon.stub().resolves('7'),
       });
-      // There is not a valid hotel on this address
+      // There is not a valid airline on this address
       const address = '0x994afd347b160be3973b41f0a144819496d175e9';
-      const hotel = await indexDataProvider.getHotel(address);
+      const airline = await indexDataProvider.getAirline(address);
       
       try {
-        await hotel.dataIndex;
+        await airline.dataIndex;
         throw new Error('should not have been called');
       } catch (e) {
         assert.match(e.message, /cannot sync remote data/i);
         assert.instanceOf(e, RemoteDataReadError);
       } finally {
-        indexDataProvider.deployedIndex.methods.hotelsIndex.restore();
+        indexDataProvider.deployedIndex.methods.airlinesIndex.restore();
       }
     });
   });
 
-  describe('addHotel', () => {
+  describe('addAirline', () => {
     it('should throw generic error when something does not work during tx data preparation', async () => {
       try {
-        sinon.stub(indexDataProvider, '_createHotelInstance').resolves({
+        sinon.stub(indexDataProvider, '_createAirlineInstance').resolves({
           setLocalData: sinon.stub().resolves(),
           createOnChainData: sinon.stub().rejects(),
         });
-        await indexDataProvider.addHotel({ manager: 'b', dataUri: 'aaa' });
+        await indexDataProvider.addAirline({ manager: 'b', dataUri: 'aaa' });
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot add hotel/i);
+        assert.match(e.message, /cannot add airline/i);
         assert.instanceOf(e, WTLibsError);
       }
     });
   });
 
-  describe('updateHotel', () => {
+  describe('updateAirline', () => {
     it('should throw generic error when something does not work during tx data preparation', async () => {
       try {
-        const hotel = await indexDataProvider.getHotel('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
-        sinon.stub(hotel, 'updateOnChainData').rejects('some original error');
-        await indexDataProvider.updateHotel(hotel);
+        const airline = await indexDataProvider.getAirline('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
+        sinon.stub(airline, 'updateOnChainData').rejects('some original error');
+        await indexDataProvider.updateAirline(airline);
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot update hotel/i);
+        assert.match(e.message, /cannot update airline/i);
         assert.instanceOf(e, WTLibsError);
         assert.isDefined(e.originalError);
         assert.equal(e.originalError.name, 'some original error');
@@ -113,15 +113,15 @@ describe('WTLibs.data-models.WTIndexDataProvider', () => {
     });
   });
 
-  describe('transferHotelOwnership', () => {
+  describe('transferAirlineOwnership', () => {
     it('should throw generic error when something does not work during tx data preparation', async () => {
       try {
-        const hotel = await indexDataProvider.getHotel('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
-        sinon.stub(hotel, 'transferOnChainOwnership').rejects('some original error');
-        await indexDataProvider.transferHotelOwnership(hotel, '0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
+        const airline = await indexDataProvider.getAirline('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
+        sinon.stub(airline, 'transferOnChainOwnership').rejects('some original error');
+        await indexDataProvider.transferAirlineOwnership(airline, '0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot transfer hotel/i);
+        assert.match(e.message, /cannot transfer airline/i);
         assert.instanceOf(e, WTLibsError);
         assert.isDefined(e.originalError);
         assert.equal(e.originalError.name, 'some original error');
@@ -130,85 +130,85 @@ describe('WTLibs.data-models.WTIndexDataProvider', () => {
 
     it('should throw when trying to transfer to an invalid address', async () => {
       try {
-        const hotel = await indexDataProvider.getHotel('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
-        await indexDataProvider.transferHotelOwnership(hotel, 'random-string-that-is-not-address');
+        const airline = await indexDataProvider.getAirline('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
+        await indexDataProvider.transferAirlineOwnership(airline, 'random-string-that-is-not-address');
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot transfer hotel/i);
+        assert.match(e.message, /cannot transfer airline/i);
         assert.instanceOf(e, InputDataError);
       }
     });
 
-    it('should throw when trying to transfer a hotel without a manager', async () => {
+    it('should throw when trying to transfer a airline without a manager', async () => {
       try {
-        const hotel = await indexDataProvider.getHotel('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
-        hotel._manager = null;
-        await indexDataProvider.transferHotelOwnership(hotel, '0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
+        const airline = await indexDataProvider.getAirline('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
+        airline._manager = null;
+        await indexDataProvider.transferAirlineOwnership(airline, '0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot transfer hotel/i);
+        assert.match(e.message, /cannot transfer airline/i);
         assert.instanceOf(e, InputDataError);
       }
     });
 
     it('should throw when transferring to the same manager', async () => {
       try {
-        const hotel = await indexDataProvider.getHotel('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
-        await indexDataProvider.transferHotelOwnership(hotel, await hotel.manager);
+        const airline = await indexDataProvider.getAirline('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
+        await indexDataProvider.transferAirlineOwnership(airline, await airline.manager);
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot transfer hotel/i);
+        assert.match(e.message, /cannot transfer airline/i);
         assert.match(e.message, /same manager/i);
         assert.instanceOf(e, InputDataError);
       }
     });
   });
 
-  describe('removeHotel', () => {
+  describe('removeAirline', () => {
     it('should throw generic error when something does not work during tx data preparation', async () => {
       try {
-        const hotel = await indexDataProvider.getHotel('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
-        sinon.stub(hotel, 'removeOnChainData').rejects();
-        await indexDataProvider.removeHotel(hotel);
+        const airline = await indexDataProvider.getAirline('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
+        sinon.stub(airline, 'removeOnChainData').rejects();
+        await indexDataProvider.removeAirline(airline);
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot remove hotel/i);
+        assert.match(e.message, /cannot remove airline/i);
         assert.instanceOf(e, WTLibsError);
       }
     });
 
-    it('should throw error when trying to remove a hotel without manager', async () => {
+    it('should throw error when trying to remove a airline without manager', async () => {
       try {
-        const hotel = await indexDataProvider.getHotel('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
-        hotel._manager = null;
-        await indexDataProvider.removeHotel(hotel);
+        const airline = await indexDataProvider.getAirline('0xbf18b616ac81830dd0c5d4b771f22fd8144fe769');
+        airline._manager = null;
+        await indexDataProvider.removeAirline(airline);
         throw new Error('should not have been called');
       } catch (e) {
-        assert.match(e.message, /cannot remove hotel/i);
+        assert.match(e.message, /cannot remove airline/i);
         assert.instanceOf(e, WTLibsError);
       }
     });
   });
 
-  describe('getAllHotels', () => {
-    it('should not panic when one of many hotels is missing on-chain', async () => {
+  describe('getAllAirlines', () => {
+    it('should not panic when one of many airlines is missing on-chain', async () => {
       // pre-heat the contract so we can stub it later
       await indexDataProvider._getDeployedIndex();
-      const getHotelSpy = sinon.spy(indexDataProvider, 'getHotel');
-      sinon.stub(indexDataProvider.deployedIndex.methods, 'getHotels').returns({
+      const getAirlineSpy = sinon.spy(indexDataProvider, 'getAirline');
+      sinon.stub(indexDataProvider.deployedIndex.methods, 'getAirlines').returns({
         call: sinon.stub().resolves([
           '0x0000000000000000000000000000000000000000', // This is an empty address
           '0xBF18B616aC81830dd0C5D4b771F22FD8144fe769',
-          '0x96eA4BbF71FEa3c9411C1Cefc555E9d7189695fA', // This is not an address of a hotel
+          '0x96eA4BbF71FEa3c9411C1Cefc555E9d7189695fA', // This is not an address of a airline
         ]),
       });
-      const hotels = await indexDataProvider.getAllHotels();
-      // Attempting to get two hotels for two valid addresses
-      assert.equal(getHotelSpy.callCount, 2);
-      // But we know there's only one actual hotel
-      assert.equal(hotels.length, 1);
-      indexDataProvider.deployedIndex.methods.getHotels.restore();
-      getHotelSpy.restore();
+      const airlines = await indexDataProvider.getAllAirline();
+      // Attempting to get two airlines for two valid addresses
+      assert.equal(getAirlineSpy.callCount, 2);
+      // But we know there's only one actual airlines
+      assert.equal(airlines.length, 1);
+      indexDataProvider.deployedIndex.methods.getAirlines.restore();
+      getAirlineSpy.restore();
     });
   });
 });

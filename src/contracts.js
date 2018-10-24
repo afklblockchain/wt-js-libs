@@ -1,7 +1,6 @@
-import WTIndexContractMetadata from '@windingtree/wt-contracts/build/contracts/AbstractWTIndex.json';
-import HotelContractMetadata from '@windingtree/wt-contracts/build/contracts/AbstractHotel.json';
+import WTIndexContractMetadata from '@afklblockchain/wt-contracts/build/contracts/AbstractWTIndex.json';
 import { SmartContractInstantiationError } from './errors';
-import AirlineContractMetadata from '';
+import AirlineContractMetadata from '@afklblockchain/wt-contracts/build/contracts/AbstractAirline.json';
 
 /**
  * Wrapper class for work with Winding Tree's Ethereum
@@ -53,16 +52,6 @@ class Contracts {
     return this._getInstance('index', WTIndexContractMetadata.abi, address);
   }
 
-  /**
-   * Returns a representation of <a href="https://github.com/windingtree/wt-contracts/blob/v0.2.0/contracts/hotel/Hotel.sol">Hotel.sol</a>.
-   *
-   * @param  {string} address
-   * @return {web3.eth.Contract} Instance of a Hotel
-   */
-  async getHotelInstance (address) {
-    return this._getInstance('hotel', HotelContractMetadata.abi, address);
-  }
-
     /**
      * TODO
    * Returns a representation of <a href="airline.sol">Airline.sol</a>.
@@ -89,7 +78,6 @@ class Contracts {
       this.eventRegistry = Object.assign(
         {},
         generateEventSignatures(WTIndexContractMetadata.abi, this.web3),
-        generateEventSignatures(HotelContractMetadata.abi, this.web3),
         generateEventSignatures(AirlineContractMetadata.abi, this.web3)
       );
     }
@@ -98,7 +86,7 @@ class Contracts {
 
   /**
    * Decodes ethereum transaction log values. Currently supports
-   * events from Index, Airline or Hotel smart contracts.
+   * events from Index, Airline smart contracts.
    *
    * @param  {Array<RawLogRecordInterface>} logs in a raw format
    * @return {Array<DecodedLogRecordInterface>} Decoded logs

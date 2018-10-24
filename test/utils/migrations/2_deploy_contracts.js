@@ -46,20 +46,20 @@ module.exports = function (deployer, network, accounts) {
         return secondIndex.setLifToken(LifTokenTest.address, { from: accounts[0], gas: 60000000 });
       }).then(function () {
         return Promise.all([
-          firstIndex.registerHotel('in-memory://urlone', { from: accounts[2], gas: 60000000 }),
-          firstIndex.registerHotel('in-memory://urltwo', { from: accounts[1], gas: 60000000 }),
+          firstIndex.registerAirline('in-memory://urlone', { from: accounts[2], gas: 60000000 }),
+          firstIndex.registerAirline('in-memory://urltwo', { from: accounts[1], gas: 60000000 }),
         ]);
       }).then(function () {
-        return firstIndex.getHotels();
-      }).then(function (hotels) {
+        return firstIndex.getAirlines();
+      }).then(function (airlines) {
         console.log('========================================');
         console.log('    Index and token owner:', accounts[0]);
         console.log('    Wallet account:', accounts[1]);
         console.log('    LifToken with faucet:', LifTokenTest.address);
         console.log('    WTIndex:', firstIndexAddress);
         console.log('    Second WTIndex:', secondIndexAddress);
-        console.log('    First hotel', hotels[1]);
-        console.log('    Second hotel', hotels[2]);
+        console.log('    First airline', airlines[1]);
+        console.log('    Second airline', airlines[2]);
         return true;
       });
   }

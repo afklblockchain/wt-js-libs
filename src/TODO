@@ -1,0 +1,22 @@
+TODO List 
+
+Modified files :
+- /src/contract.js
+    - Info about accessing Airline contract to add
+- /src/interfaces.js
+    - Add airline interface
+    - Add airline method interfaces
+- /src/index.js
+    - Add Airline specific errors
+- /src/errors.js
+    - Add Airline specific errors
+- /src/contracts.js
+- /src/data-model/wt-index.js
+    -
+
+NO NEED TO CHECK
+- /src/wallet.js
+- /src/storage-pointer.js
+- /src/remotely-backed-dataset.js
+- /src/off-chain-data-client.js
+

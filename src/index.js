@@ -1,5 +1,4 @@
 // @flow
-
 import type { DataModelOptionsType } from './data-model';
 import type { OffChainDataClientOptionsType } from './off-chain-data-client';
 import type { WTIndexInterface, AdaptedTxResultsInterface, OffChainDataAdapterInterface, WalletInterface, KeystoreV3Interface } from './interfaces';
@@ -28,8 +27,6 @@ import {
   RemotelyBackedDatasetError,
   RemoteDataAccessError,
   RemoteDataReadError,
-  HotelNotFoundError,
-  HotelNotInstantiableError,
   AirlineNotFoundError,
   AirlineNotInstatiableError
 } from './errors';
@@ -129,8 +126,6 @@ WTLibs.errors = {
   RemotelyBackedDatasetError,
   RemoteDataAccessError,
   RemoteDataReadError,
-  HotelNotFoundError,
-  HotelNotInstantiableError,
   AirlineNotFoundError,
   AirlineNotInstatiableError
 };
