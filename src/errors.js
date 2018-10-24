@@ -137,3 +137,13 @@ export class HotelNotFoundError extends WTLibsError {}
  * Hotel abstraction instance cannot be created for some reason.
  */
 export class HotelNotInstantiableError extends WTLibsError {}
+
+/**
+ * Airline is not found in WTIndex for some reason.
+ */
+export class AirlineNotFoundError extends WTLibsError {}
+
+/**
+ * Airline abstraction instance cannot be created for some reason.
+ */
+export class AirlineNotInstantiableError extends WTLibsError {}

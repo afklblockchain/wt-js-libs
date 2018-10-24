@@ -25,6 +25,30 @@ export interface PlainHotelInterface {
   dataUri: Promise<{ref: string, contents: Object}> | {ref: string, contents: Object}
 }
 
+
+/**
+ * Shape of data that is stored on-chain
+ * about every airline.
+ *
+ * - `address` is the network address.
+ * - `endpoint` is the URL of the NDC API.
+ * - `token` is the encrypted token required to be able to call the NDC API 
+ * 
+ */
+export interface AirlineOnChainDataInterface {
+  address: Promise<?string> | ?string,
+  endpoint: Promise<?string> | ?string,
+  manager: Promise<?string> | ?string,
+  token: Promise<?string> | ?string
+}
+
+export interface PlainAirlineInterface {
+  address: Promise<?string> | ?string,
+  endpoint: Promise<?string> | ?string,
+  manager: Promise<?string> | ?string,
+  token: Promise<{ref: string, contents: Object}> | {ref: string, contents: Object}
+}
+
 /**
  * Ethereum transaction options that are passed from an external user.
  * It has to contain `from` and usually would contain `to` as well.
@@ -64,6 +88,20 @@ export interface PreparedTransactionMetadataInterface {
 }
 
 /**
+ * Format of generated transaction data and metadata
+ * that contains a related hotel instance, transactionData
+ * itself (ready for signing) and optionally eventCallbacks
+ * that should be passed to our Wallet abstraction with
+ * transactionData itself to ensure a consistent internal state
+ * after the transaction is mined.
+ */
+export interface PreparedAirlineTransactionMetadataInterface {
+  airline: AirlineInterface,
+  transactionData: TransactionDataInterface,
+  eventCallbacks?: TransactionCallbacksInterface
+}
+
+/**
  * Represents a hotel instance that can
  * communicate with on-chain hotel representation
  * and provides an access to offChain data via `dataIndex`
@@ -82,17 +120,46 @@ export interface HotelInterface extends HotelOnChainDataInterface {
 }
 
 /**
+ * Represents a airline instance that can
+ * communicate with on-chain airline representation
+ */
+export interface AirlineInterface extends AirlineOnChainDataInterface {
+  +dataIndex: Promise<StoragePointer>,
+
+  toPlainObject(): Promise<Object>,
+  setLocalData(newData: AirlineOnChainDataInterface): Promise<void>,
+  createOnChainData(transactionOptions: TransactionOptionsInterface): Promise<PreparedAirlineTransactionMetadataInterface>,
+  updateOnChainData(transactionOptions: TransactionOptionsInterface): Promise<Array<PreparedAirlineTransactionMetadataInterface>>,
+  removeOnChainData(transactionOptions: TransactionOptionsInterface): Promise<PreparedAirlineTransactionMetadataInterface>,
+  transferOnChainOwnership(newManager: string, transactionOptions: TransactionOptionsInterface): Promise<PreparedAirlineTransactionMetadataInterface>
+}
+
+/**
  * WindingTree index interface that provides all methods
  * necessary for interaction with the hotels.`
  */
 export interface WTIndexInterface {
+  /*
+   * Hotel methods
+   */
   addHotel(hotel: HotelOnChainDataInterface): Promise<PreparedTransactionMetadataInterface>,
   getHotel(address: string): Promise<?HotelInterface>,
   getAllHotels(): Promise<Array<HotelInterface>>,
   // It is possible that this operation generates multiple transactions in the future
   updateHotel(hotel: HotelInterface): Promise<Array<PreparedTransactionMetadataInterface>>,
   removeHotel(hotel: HotelInterface): Promise<PreparedTransactionMetadataInterface>,
-  transferHotelOwnership(hotel: HotelInterface, newManager: string): Promise<PreparedTransactionMetadataInterface>
+  transferHotelOwnership(hotel: HotelInterface, newManager: string): Promise<PreparedTransactionMetadataInterface>,
+
+  /*
+   * Airline methods
+   */
+  addAirline(airline, AirlineOnChainDataInterface): Promise<PreparedAirlineTransactionMetadataInterface>,
+  getAirline(address: string): Promise<?AirlineInterface>,
+  getAllAirlines(): Promise<Array<AirlineInterface>>,
+  // It is possible that this operation generates multiple transactions in the future
+  updateAirline(airline: AirlineInterface): Promise<Array<PreparedAirlineTransactionMetadataInterface>>,
+  removeAirline(airline: AirlineInterface): Promise<PreparedAirlineTransactionMetadataInterface>,
+  transferAirlineOwnership(airline: AirlineInterface, newManager: string): Promise<PreparedAirlineTransactionMetadataInterface>,
 }
 
 /**

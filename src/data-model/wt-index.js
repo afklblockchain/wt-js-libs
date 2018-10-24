@@ -1,5 +1,13 @@
 // @flow
-import type { WTIndexInterface, HotelOnChainDataInterface, HotelInterface, PreparedTransactionMetadataInterface } from '../interfaces';
+import type { 
+  WTIndexInterface, 
+  HotelOnChainDataInterface, 
+  HotelInterface, 
+  PreparedTransactionMetadataInterface,
+  AirlineOnChainDataInterface,
+  AirlineInterface,
+  PreparedAirlineTransactionMetadataInterface
+ } from '../interfaces';
 import Utils from '../utils';
 import Contracts from '../contracts';
 import OnChainHotel from './on-chain-hotel';

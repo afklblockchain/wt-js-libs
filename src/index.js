@@ -30,6 +30,8 @@ import {
   RemoteDataReadError,
   HotelNotFoundError,
   HotelNotInstantiableError,
+  AirlineNotFoundError,
+  AirlineNotInstatiableError
 } from './errors';
 
 /**
@@ -129,6 +131,8 @@ WTLibs.errors = {
   RemoteDataReadError,
   HotelNotFoundError,
   HotelNotInstantiableError,
+  AirlineNotFoundError,
+  AirlineNotInstatiableError
 };
 
 export default WTLibs;
